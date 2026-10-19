@@ -1,5 +1,6 @@
 import {createScene, logEvent} from './api.js';
 import {
+  buildPracticeState,
   clearPractice,
   loadRecentThemes,
   recordRecentTheme,
@@ -48,25 +49,11 @@ startButton.addEventListener('click', async () => {
     const scene = response.envelope.scene;
     recordRecentTheme(scene.theme);
     clearPractice();
-    savePractice({
+    savePractice(buildPracticeState({
       difficulty: selection.difficulty,
       avatar: selection.avatar,
-      envelope: response.envelope,
-      signature: response.signature,
-      openingText: response.opening_text,
-      openingAudioBase64: response.opening_audio_base64,
-      openingMediaType: response.opening_media_type,
-      currentStepId: scene.steps[0].step_id,
-      attempts: 0,
-      stars: 0,
-      completedStepIds: [],
-      targetExpressionsCompleted: [],
-      history: [],
-      helpUsed: false,
-      hasStarted: false,
-      completed: false,
-      lastPracticeAt: new Date().toISOString(),
-    });
+      response,
+    }));
     logEvent('practice_started', {
       difficulty: selection.difficulty,
       theme: scene.theme,

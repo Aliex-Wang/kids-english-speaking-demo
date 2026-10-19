@@ -75,3 +75,28 @@ def test_mobile_layout_has_no_horizontal_overflow(
         "document.documentElement.scrollWidth - window.innerWidth"
     )
     assert overflow <= 1
+
+
+def test_restart_failure_is_shown_on_end_screen_and_recovers(
+    live_server,
+    browser_page,
+):
+    page = browser_page
+    start_practice(page, live_server)
+    answer_until_complete(page)
+    page.wait_for_selector(
+        "[data-testid=end-screen]:not(.hidden)",
+        timeout=15000,
+    )
+    page.route("**/api/scene", lambda route: route.abort())
+    page.get_by_test_id("restart-button").click()
+    page.wait_for_function(
+        "document.querySelector('[data-testid=end-status]')?.textContent"
+        " === '新场景准备失败，请再试一次。'",
+        timeout=15000,
+    )
+    assert page.get_by_test_id("end-screen").is_visible()
+    assert page.get_by_test_id("restart-button").is_enabled()
+    page.unroute("**/api/scene")
+    page.get_by_test_id("restart-button").click()
+    page.wait_for_selector("#task-intro:not(.hidden)", timeout=15000)

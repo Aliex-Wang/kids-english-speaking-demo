@@ -1,6 +1,7 @@
 import {createScene, logEvent, submitTurn} from './api.js';
 import {MicRecorder} from './recorder.js';
 import {
+  buildPracticeState,
   clearPractice,
   loadPractice,
   loadRecentThemes,
@@ -35,6 +36,7 @@ const elements = {
   taskIntro: document.getElementById('task-intro'),
   dialogue: document.getElementById('dialogue'),
   endScreen: document.getElementById('end-screen'),
+  endStatus: document.getElementById('end-status'),
   themeVisual: document.getElementById('theme-visual'),
   sceneTitle: document.getElementById('scene-title'),
   sceneGoal: document.getElementById('scene-goal'),
@@ -61,8 +63,6 @@ const elements = {
   restartButton: document.getElementById('restart-button'),
   changeDifficulty: document.getElementById('change-difficulty'),
 };
-
-elements.targetExpressions.setAttribute('data-testid', 'target-expressions');
 
 let lastReplyText = '';
 let lastReplyAudio = null;
@@ -173,6 +173,7 @@ function showEnd() {
   elements.taskIntro.classList.add('hidden');
   elements.dialogue.classList.add('hidden');
   elements.endScreen.classList.remove('hidden');
+  elements.endStatus.textContent = '';
   elements.stars.textContent = '⭐'.repeat(state.stars);
   elements.targetExpressions.innerHTML = '';
   scene.target_expressions.forEach((text) => {
@@ -334,7 +335,7 @@ function showHelp() {
 
 async function restartPractice() {
   elements.restartButton.disabled = true;
-  setStatus('正在准备新的场景...');
+  elements.endStatus.textContent = '正在准备新的场景...';
   try {
     const response = await createScene(
       state.difficulty,
@@ -343,32 +344,18 @@ async function restartPractice() {
     const nextScene = response.envelope.scene;
     recordRecentTheme(nextScene.theme);
     clearPractice();
-    savePractice({
+    savePractice(buildPracticeState({
       difficulty: state.difficulty,
       avatar: state.avatar,
-      envelope: response.envelope,
-      signature: response.signature,
-      openingText: response.opening_text,
-      openingAudioBase64: response.opening_audio_base64,
-      openingMediaType: response.opening_media_type,
-      currentStepId: nextScene.steps[0].step_id,
-      attempts: 0,
-      stars: 0,
-      completedStepIds: [],
-      targetExpressionsCompleted: [],
-      history: [],
-      helpUsed: false,
-      hasStarted: false,
-      completed: false,
-      lastPracticeAt: new Date().toISOString(),
-    });
+      response,
+    }));
     logEvent('practice_restarted', {
       difficulty: state.difficulty,
       theme: nextScene.theme,
     });
     window.location.reload();
   } catch {
-    setStatus('新场景准备失败，请再试一次。');
+    elements.endStatus.textContent = '新场景准备失败，请再试一次。';
     elements.restartButton.disabled = false;
   }
 }

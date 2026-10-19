@@ -1,6 +1,29 @@
 const PRACTICE_KEY = 'kidsEnglishPracticeV1';
 const RECENT_KEY = 'kidsEnglishRecentThemesV1';
 
+export function buildPracticeState({difficulty, avatar, response}) {
+  const scene = response.envelope.scene;
+  return {
+    difficulty,
+    avatar,
+    envelope: response.envelope,
+    signature: response.signature,
+    openingText: response.opening_text,
+    openingAudioBase64: response.opening_audio_base64,
+    openingMediaType: response.opening_media_type,
+    currentStepId: scene.steps[0].step_id,
+    attempts: 0,
+    stars: 0,
+    completedStepIds: [],
+    targetExpressionsCompleted: [],
+    history: [],
+    helpUsed: false,
+    hasStarted: false,
+    completed: false,
+    lastPracticeAt: new Date().toISOString(),
+  };
+}
+
 export function savePractice(state) {
   localStorage.setItem(
     PRACTICE_KEY,

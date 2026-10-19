@@ -114,6 +114,17 @@ def test_turn_rejects_unknown_step(tmp_path):
     assert response.status_code == 400
 
 
+def test_turn_rejects_attempts_over_cap(tmp_path):
+    client, settings = build_client(tmp_path)
+    envelope, signature = signed_envelope(settings)
+    response = client.post(
+        "/api/turn",
+        data=form_data(envelope, signature, attempts="4"),
+        files={"audio": ("turn.wav", make_silence_wav(0.2), "audio/wav")},
+    )
+    assert response.status_code == 422
+
+
 def test_low_confidence_asr_returns_retry(tmp_path):
     class LowConfidenceASR:
         async def transcribe(self, audio_wav):

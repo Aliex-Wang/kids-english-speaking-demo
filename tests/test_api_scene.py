@@ -1,3 +1,5 @@
+import json
+
 from fastapi.testclient import TestClient
 
 from app.config import Settings
@@ -56,3 +58,33 @@ def test_scene_endpoint_returns_fallback_for_invalid_llm(tmp_path):
     )
     assert response.status_code == 200
     assert response.json()["fallback_used"] is True
+
+
+def test_scene_opening_tts_failure_returns_text_only(tmp_path):
+    class FailingTTS:
+        async def synthesize(self, text, voice, speed):
+            raise RuntimeError("tts unavailable")
+
+    client, settings = build_client(tmp_path)
+    client.app.state.services.tts = FailingTTS()
+    response = client.post(
+        "/api/scene",
+        json={"difficulty": "explorer", "recent_themes": []},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["opening_text"]
+    assert payload["opening_audio_base64"] is None
+    request_id = response.headers["x-request-id"]
+    records = [
+        json.loads(line)
+        for line in settings.event_log_path.read_text(
+            encoding="utf-8"
+        ).strip().splitlines()
+    ]
+    technical = [
+        record for record in records if record["event"] == "technical_error"
+    ]
+    assert len(technical) == 1
+    assert technical[0]["error_type"] == "RuntimeError"
+    assert technical[0]["request_id"] == request_id

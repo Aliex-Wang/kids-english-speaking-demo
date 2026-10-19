@@ -53,13 +53,7 @@ async def index(
     return services.templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={
-            "app_config": services.app_config,
-            "app_config_json": json.dumps(
-                services.app_config,
-                ensure_ascii=False,
-            ),
-        },
+        context={"app_config": services.app_config},
     )
 
 
@@ -71,21 +65,17 @@ async def practice(
     return services.templates.TemplateResponse(
         request=request,
         name="practice.html",
-        context={
-            "app_config": services.app_config,
-            "app_config_json": json.dumps(
-                services.app_config,
-                ensure_ascii=False,
-            ),
-        },
+        context={"app_config": services.app_config},
     )
 
 
 @router.post("/api/scene", response_model=SceneResponse)
 async def create_scene(
     payload: SceneRequest,
+    request: Request,
     services: Services = Depends(get_services),
 ):
+    request_id = request.state.request_id
     started = time.perf_counter()
     generated = await services.scene_generator.generate(
         payload.difficulty,
@@ -107,12 +97,13 @@ async def create_scene(
         )
         opening_audio_base64 = base64.b64encode(opening.audio).decode("ascii")
         opening_media_type = opening.media_type
-    except Exception:
+    except Exception as exc:
         services.events.log(
             "technical_error",
             {
                 "difficulty": payload.difficulty.value,
-                "error_type": "tts_opening",
+                "error_type": type(exc).__name__,
+                "request_id": request_id,
             },
         )
     services.events.log(
@@ -123,6 +114,7 @@ async def create_scene(
             "success": not generated.fallback_used,
             "latency_ms": round((time.perf_counter() - started) * 1000),
             "error_type": generated.error_type or "none",
+            "request_id": request_id,
         },
     )
     return SceneResponse(
@@ -137,6 +129,7 @@ async def create_scene(
 
 @router.post("/api/turn", response_model=TurnResponse)
 async def submit_turn(
+    request: Request,
     envelope_json: str = Form(...),
     signature: str = Form(...),
     current_step_id: str = Form(...),
@@ -147,13 +140,14 @@ async def submit_turn(
     text_input: str | None = Form(None),
     services: Services = Depends(get_services),
 ):
+    request_id = request.state.request_id
     started = time.perf_counter()
-    if not 0 <= attempts <= 10:
+    if not 0 <= attempts <= 3:
         raise HTTPException(
             status_code=422,
             detail={
                 "code": "invalid_attempts",
-                "message": "attempts must be between 0 and 10",
+                "message": "attempts must be between 0 and 3",
             },
         )
     try:
@@ -192,7 +186,7 @@ async def submit_turn(
                     "message": "audio or text_input is required",
                 },
             )
-        raw_audio = await audio.read()
+        raw_audio = await audio.read(services.settings.max_audio_bytes + 1)
         if len(raw_audio) > services.settings.max_audio_bytes:
             raise HTTPException(
                 status_code=413,
@@ -218,7 +212,8 @@ async def submit_turn(
                 "technical_error",
                 {
                     "difficulty": envelope.scene.difficulty.value,
-                    "error_type": "asr",
+                    "error_type": type(exc).__name__,
+                    "request_id": request_id,
                 },
             )
             raise HTTPException(
@@ -262,6 +257,7 @@ async def submit_turn(
             "turns": len(history) + 1,
             "latency_ms": round((time.perf_counter() - started) * 1000),
             "error_type": result.error_type or "none",
+            "request_id": request_id,
         },
     )
     return result
@@ -270,10 +266,14 @@ async def submit_turn(
 @router.post("/api/event")
 async def record_event(
     payload: EventRequest,
+    request: Request,
     services: Services = Depends(get_services),
 ):
     try:
-        services.events.log(payload.name.value, payload.properties)
+        services.events.log(
+            payload.name.value,
+            {**payload.properties, "request_id": request.state.request_id},
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=422,

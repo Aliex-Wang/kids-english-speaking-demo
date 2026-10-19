@@ -1,6 +1,7 @@
+import uuid
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -22,6 +23,15 @@ def create_app(
         services = build_services(settings, templates)
     app.state.services = services
     app.state.settings = settings
+
+    @app.middleware("http")
+    async def add_request_id(request: Request, call_next):
+        request_id = request.headers.get("x-request-id") or uuid.uuid4().hex
+        request.state.request_id = request_id
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
+
     app.mount(
         "/static",
         StaticFiles(directory=BASE_DIR / "static", check_dir=False),

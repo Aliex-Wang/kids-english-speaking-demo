@@ -12,6 +12,7 @@ ALLOWED_EVENT_PROPERTIES = {
     "latency_ms",
     "error_type",
     "continued_after_help",
+    "request_id",
 }
 
 

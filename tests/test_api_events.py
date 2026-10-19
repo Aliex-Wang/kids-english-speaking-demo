@@ -49,3 +49,28 @@ def test_event_endpoint_rejects_unknown_event(tmp_path):
         json={"name": "unknown_event", "properties": {}},
     )
     assert response.status_code == 422
+
+
+def test_event_record_request_id_matches_response_header(tmp_path):
+    client, settings = build_client(tmp_path)
+    response = client.post(
+        "/api/event",
+        json={"name": "practice_started", "properties": {}},
+    )
+    assert response.status_code == 200
+    request_id = response.headers["x-request-id"]
+    record = json.loads(settings.event_log_path.read_text(encoding="utf-8").strip())
+    assert record["request_id"] == request_id
+
+
+def test_event_record_honors_incoming_request_id(tmp_path):
+    client, settings = build_client(tmp_path)
+    response = client.post(
+        "/api/event",
+        json={"name": "practice_started", "properties": {}},
+        headers={"X-Request-ID": "req-123"},
+    )
+    assert response.status_code == 200
+    assert response.headers["x-request-id"] == "req-123"
+    record = json.loads(settings.event_log_path.read_text(encoding="utf-8").strip())
+    assert record["request_id"] == "req-123"

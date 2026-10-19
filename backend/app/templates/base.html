@@ -11,7 +11,7 @@
     {% block content %}{% endblock %}
   </main>
   <script>
-    window.__APP_CONFIG__ = {{ app_config_json | safe }};
+    window.__APP_CONFIG__ = {{ app_config | tojson }};
   </script>
   {% block scripts %}{% endblock %}
 </body>

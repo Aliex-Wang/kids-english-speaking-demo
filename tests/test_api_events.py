@@ -79,3 +79,23 @@ def test_event_record_ignores_client_request_id(tmp_path):
     assert client_supplied not in log_text
     record = json.loads(log_text.strip())
     assert record["request_id"] == request_id
+
+
+def test_continued_after_help_event_is_allowed(tmp_path):
+    client, settings = build_client(tmp_path)
+    response = client.post(
+        "/api/event",
+        json={
+            "name": "continued_after_help",
+            "properties": {
+                "continued_after_help": True,
+                "difficulty": "explorer",
+            },
+        },
+    )
+    assert response.status_code == 200
+    record = json.loads(
+        settings.event_log_path.read_text(encoding="utf-8").strip()
+    )
+    assert record["event"] == "continued_after_help"
+    assert record["continued_after_help"] is True

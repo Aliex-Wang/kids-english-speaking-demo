@@ -117,6 +117,7 @@ class EventName(str, Enum):
     help_clicked = "help_clicked"
     practice_completed = "practice_completed"
     practice_restarted = "practice_restarted"
+    continued_after_help = "continued_after_help"
     technical_error = "technical_error"
 
 

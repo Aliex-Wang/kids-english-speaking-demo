@@ -1,8 +1,9 @@
 import io
+import json
 import wave
 from collections.abc import Callable
 
-from app.providers.base import ASRResult, TTSResult
+from app.providers.base import ASRResult, ProviderError, TTSResult
 from app.schemas import Difficulty, ThemeId
 
 
@@ -22,7 +23,9 @@ class FakeASRProvider:
         texts: list[str] | None = None,
         default_text: str = "I want milk.",
     ):
-        self.texts = texts or [default_text]
+        if texts is not None and not texts:
+            raise ValueError("FakeASRProvider texts must not be empty")
+        self.texts = texts if texts is not None else [default_text]
         self.index = 0
 
     async def transcribe(self, audio_wav: bytes) -> ASRResult:
@@ -47,20 +50,24 @@ class FakeLLMProvider:
             theme = ThemeId(_line_value(user_prompt, "THEME"))
             difficulty = Difficulty(_line_value(user_prompt, "DIFFICULTY"))
             return self.scene_factory(theme, difficulty)
-        next_prompt = _line_value(user_prompt, "NEXT_ROLE_PROMPT")
-        return self.turn_response or {
-            "accepted": True,
-            "feedback": "Great job!",
-            "reply": (
-                next_prompt
-                if next_prompt != "NONE"
-                else "Great job! See you next time."
-            ),
-            "hint": "",
-            "next_step": None,
-            "stars": 1,
-            "safety": "ok",
-        }
+        if system_prompt.startswith("TURN_JUDGEMENT"):
+            next_prompt = json.loads(_line_value(user_prompt, "NEXT_ROLE_PROMPT_JSON"))
+            if self.turn_response is not None:
+                return self.turn_response
+            return {
+                "accepted": True,
+                "feedback": "Great job!",
+                "reply": (
+                    next_prompt
+                    if next_prompt is not None
+                    else "Great job! See you next time."
+                ),
+                "hint": "",
+                "next_step": None,
+                "stars": 1,
+                "safety": "ok",
+            }
+        raise ProviderError(f"unsupported system prompt: {system_prompt!r}")
 
 
 class FakeTTSProvider:
@@ -81,7 +88,7 @@ class FakePronunciationProvider:
 
 def _line_value(prompt: str, key: str) -> str:
     prefix = f"{key}:"
-    for line in prompt.splitlines():
+    for line in prompt.split("\n"):
         if line.startswith(prefix):
             return line.split(":", 1)[1].strip()
     raise ValueError(f"missing prompt line: {key}")

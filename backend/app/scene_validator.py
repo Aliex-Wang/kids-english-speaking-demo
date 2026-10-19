@@ -72,6 +72,7 @@ class SceneValidator:
                 step.hint_zh,
                 step.retry_prompt,
                 *step.target_phrases,
+                *step.accepted_keywords,
             ]:
                 if self.safety.violations(value):
                     issues.append(f"{step.step_id} contains unsafe content")

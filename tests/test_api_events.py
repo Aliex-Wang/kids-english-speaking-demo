@@ -1,4 +1,5 @@
 import json
+import re
 
 from fastapi.testclient import TestClient
 
@@ -63,14 +64,18 @@ def test_event_record_request_id_matches_response_header(tmp_path):
     assert record["request_id"] == request_id
 
 
-def test_event_record_honors_incoming_request_id(tmp_path):
+def test_event_record_ignores_client_request_id(tmp_path):
     client, settings = build_client(tmp_path)
+    client_supplied = "attacker-secret-transcript"
     response = client.post(
         "/api/event",
         json={"name": "practice_started", "properties": {}},
-        headers={"X-Request-ID": "req-123"},
+        headers={"X-Request-ID": client_supplied},
     )
     assert response.status_code == 200
-    assert response.headers["x-request-id"] == "req-123"
-    record = json.loads(settings.event_log_path.read_text(encoding="utf-8").strip())
-    assert record["request_id"] == "req-123"
+    request_id = response.headers["x-request-id"]
+    assert re.fullmatch(r"[0-9a-f]{32}", request_id)
+    log_text = settings.event_log_path.read_text(encoding="utf-8")
+    assert client_supplied not in log_text
+    record = json.loads(log_text.strip())
+    assert record["request_id"] == request_id

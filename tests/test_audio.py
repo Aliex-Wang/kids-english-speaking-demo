@@ -14,6 +14,16 @@ def test_empty_audio_is_rejected():
         convert_to_wav_16k_mono(b"", "audio/webm")
 
 
+def test_already_asr_ready_wav_skips_ffmpeg(monkeypatch):
+    source = make_silence_wav(0.2)
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("ffmpeg should not be called for ASR-ready WAV")
+
+    monkeypatch.setattr(subprocess, "run", fail_if_called)
+    assert convert_to_wav_16k_mono(source, "audio/wav") == source
+
+
 def test_ffmpeg_command_targets_16k_mono(monkeypatch):
     captured = {}
 

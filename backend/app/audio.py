@@ -1,5 +1,7 @@
+import io
 import subprocess
 import tempfile
+import wave
 from pathlib import Path
 
 
@@ -14,6 +16,17 @@ def convert_to_wav_16k_mono(
 ) -> bytes:
     if not audio:
         raise AudioConversionError("empty audio")
+
+    try:
+        with wave.open(io.BytesIO(audio), "rb") as wav:
+            if (
+                wav.getnchannels() == 1
+                and wav.getframerate() == 16000
+                and wav.getsampwidth() == 2
+            ):
+                return audio
+    except (wave.Error, EOFError):
+        pass
 
     with tempfile.TemporaryDirectory() as temp_dir:
         source = Path(temp_dir) / "input"

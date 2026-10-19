@@ -1,0 +1,472 @@
+templates:
+  - theme: family
+    title: Morning Helpers
+    setting: in the kitchen
+    role: Mom
+    goal: ask for breakfast and get ready for school
+    expressions:
+      sprout: [milk, bag]
+      explorer: ["I want milk.", "My bag is here."]
+      star: ["I would like some milk, please.", "I put my book in my schoolbag."]
+    steps:
+      - kind: greeting
+        goal: greet the child
+        role_prompt: Good morning, are you ready for breakfast?
+        targets:
+          sprout: ["yes"]
+          explorer: ["Yes, I am ready."]
+          star: ["Yes, I am ready for breakfast."]
+        keywords: ["yes", ready]
+        hints:
+          sprout: "Say: yes"
+          explorer: "Say: Yes, I am ready."
+          star: "Say: Yes, I am ready for breakfast."
+        hints_zh:
+          sprout: "说：yes"
+          explorer: "说：Yes, I am ready."
+          star: "说：Yes, I am ready for breakfast."
+        retry_prompt: Try saying yes.
+      - kind: task
+        goal: ask for breakfast
+        role_prompt: What would you like for breakfast?
+        targets:
+          sprout: [milk]
+          explorer: ["I want milk."]
+          star: ["I would like some milk, please."]
+        keywords: [milk, bread, egg]
+        hints:
+          sprout: "Say: milk"
+          explorer: "Say: I want milk."
+          star: "Say: I would like some milk, please."
+        hints_zh:
+          sprout: "说：milk"
+          explorer: "说：I want milk."
+          star: "说：I would like some milk, please."
+        retry_prompt: Try saying what you want.
+      - kind: free_expression
+        goal: say one more thing about the morning
+        role_prompt: What do you like to eat with milk?
+        targets:
+          sprout: [bread]
+          explorer: ["I like bread."]
+          star: ["I like bread with milk."]
+        keywords: [bread, cake, egg]
+        hints:
+          sprout: "Say: bread"
+          explorer: "Say: I like bread."
+          star: "Say: I like bread with milk."
+        hints_zh:
+          sprout: "说：bread"
+          explorer: "说：I like bread."
+          star: "说：I like bread with milk."
+        retry_prompt: Try saying what you like.
+      - kind: goodbye
+        goal: say goodbye
+        role_prompt: Have a good day at school!
+        targets:
+          sprout: [bye]
+          explorer: ["Goodbye!"]
+          star: ["Goodbye! Have a nice day!"]
+        keywords: [bye, goodbye]
+        hints:
+          sprout: "Say: bye"
+          explorer: "Say: Goodbye!"
+          star: "Say: Goodbye! Have a nice day!"
+        hints_zh:
+          sprout: "说：bye"
+          explorer: "说：Goodbye!"
+          star: "说：Goodbye! Have a nice day!"
+        retry_prompt: Try saying goodbye.
+
+  - theme: school
+    title: Library Helper
+    setting: in the school library
+    role: Teacher
+    goal: borrow a book and speak quietly
+    expressions:
+      sprout: [book, quiet]
+      explorer: ["This is my book.", "I will be quiet."]
+      star: ["May I borrow this book, please?", "I will keep quiet in the library."]
+    steps:
+      - kind: greeting
+        goal: greet the teacher
+        role_prompt: Hello, welcome to the library!
+        targets:
+          sprout: [hello]
+          explorer: ["Hello!"]
+          star: ["Hello, thank you for welcoming me."]
+        keywords: [hello, hi]
+        hints:
+          sprout: "Say: hello"
+          explorer: "Say: Hello!"
+          star: "Say: Hello, thank you for welcoming me."
+        hints_zh:
+          sprout: "说：hello"
+          explorer: "说：Hello!"
+          star: "说：Hello, thank you for welcoming me."
+        retry_prompt: Try saying hello.
+      - kind: task
+        goal: ask to borrow a book
+        role_prompt: Which book would you like to borrow?
+        targets:
+          sprout: [book]
+          explorer: ["I want this book."]
+          star: ["May I borrow this book, please?"]
+        keywords: [book, story, animal]
+        hints:
+          sprout: "Say: book"
+          explorer: "Say: I want this book."
+          star: "Say: May I borrow this book, please?"
+        hints_zh:
+          sprout: "说：book"
+          explorer: "说：I want this book."
+          star: "说：May I borrow this book, please?"
+        retry_prompt: Try saying which book you want.
+      - kind: free_expression
+        goal: say how to behave in the library
+        role_prompt: How should we behave in the library?
+        targets:
+          sprout: [quiet]
+          explorer: ["We are quiet."]
+          star: ["We should be quiet in the library."]
+        keywords: [quiet, whisper, read]
+        hints:
+          sprout: "Say: quiet"
+          explorer: "Say: We are quiet."
+          star: "Say: We should be quiet in the library."
+        hints_zh:
+          sprout: "说：quiet"
+          explorer: "说：We are quiet."
+          star: "说：We should be quiet in the library."
+        retry_prompt: Try saying how to behave.
+      - kind: goodbye
+        goal: say goodbye
+        role_prompt: Enjoy your book!
+        targets:
+          sprout: [thanks]
+          explorer: ["Thank you!"]
+          star: ["Thank you, I will enjoy it."]
+        keywords: [thanks, thank]
+        hints:
+          sprout: "Say: thanks"
+          explorer: "Say: Thank you!"
+          star: "Say: Thank you, I will enjoy it."
+        hints_zh:
+          sprout: "说：thanks"
+          explorer: "说：Thank you!"
+          star: "说：Thank you, I will enjoy it."
+        retry_prompt: Try saying thank you.
+
+  - theme: shopping
+    title: Bakery Visit
+    setting: in a bakery
+    role: Baker
+    goal: buy bread and ask about the price
+    expressions:
+      sprout: [bread, apple]
+      explorer: ["I want bread.", "How much is it?"]
+      star: ["I would like to buy some bread, please.", "Could you tell me how much it is?"]
+    steps:
+      - kind: greeting
+        goal: greet the baker
+        role_prompt: Hello, welcome to the bakery!
+        targets:
+          sprout: [hello]
+          explorer: ["Hello!"]
+          star: ["Hello, the bakery smells wonderful."]
+        keywords: [hello, hi]
+        hints:
+          sprout: "Say: hello"
+          explorer: "Say: Hello!"
+          star: "Say: Hello, the bakery smells wonderful."
+        hints_zh:
+          sprout: "说：hello"
+          explorer: "说：Hello!"
+          star: "说：Hello, the bakery smells wonderful."
+        retry_prompt: Try saying hello.
+      - kind: task
+        goal: ask for bread
+        role_prompt: What would you like to buy?
+        targets:
+          sprout: [bread]
+          explorer: ["I want bread."]
+          star: ["I would like to buy some bread, please."]
+        keywords: [bread, cake, cookie]
+        hints:
+          sprout: "Say: bread"
+          explorer: "Say: I want bread."
+          star: "Say: I would like to buy some bread, please."
+        hints_zh:
+          sprout: "说：bread"
+          explorer: "说：I want bread."
+          star: "说：I would like to buy some bread, please."
+        retry_prompt: Try saying what you want.
+      - kind: free_expression
+        goal: ask about the price
+        role_prompt: Would you like to know the price?
+        targets:
+          sprout: [how much]
+          explorer: ["How much is it?"]
+          star: ["Could you tell me how much it is?"]
+        keywords: [much, price, cost]
+        hints:
+          sprout: "Say: how much"
+          explorer: "Say: How much is it?"
+          star: "Say: Could you tell me how much it is?"
+        hints_zh:
+          sprout: "说：how much"
+          explorer: "说：How much is it?"
+          star: "说：Could you tell me how much it is?"
+        retry_prompt: Try asking about the price.
+      - kind: goodbye
+        goal: say thank you
+        role_prompt: Here you are!
+        targets:
+          sprout: [thanks]
+          explorer: ["Thank you!"]
+          star: ["Thank you very much. Goodbye!"]
+        keywords: [thanks, thank]
+        hints:
+          sprout: "Say: thanks"
+          explorer: "Say: Thank you!"
+          star: "Say: Thank you very much. Goodbye!"
+        hints_zh:
+          sprout: "说：thanks"
+          explorer: "说：Thank you!"
+          star: "说：Thank you very much. Goodbye!"
+        retry_prompt: Try saying thank you.
+  - theme: food
+    title: Snack Time
+    setting: at a snack shop
+    role: Shopkeeper
+    goal: order a snack and a drink
+    expressions:
+      sprout: [juice, rice]
+      explorer: ["I want juice.", "I like rice."]
+      star: ["I would like some juice and rice, please.", "I prefer apple juice."]
+    steps:
+      - kind: greeting
+        goal: greet the shopkeeper
+        role_prompt: Hello, what would you like today?
+        targets:
+          sprout: [hello]
+          explorer: ["Hello!"]
+          star: ["Hello, I would like something to eat."]
+        keywords: [hello, hi]
+        hints:
+          sprout: "Say: hello"
+          explorer: "Say: Hello!"
+          star: "Say: Hello, I would like something to eat."
+        hints_zh:
+          sprout: "说：hello"
+          explorer: "说：Hello!"
+          star: "说：Hello, I would like something to eat."
+        retry_prompt: Try saying hello.
+      - kind: task
+        goal: order a drink
+        role_prompt: What would you like to drink?
+        targets:
+          sprout: [juice]
+          explorer: ["I want juice."]
+          star: ["I would like some apple juice, please."]
+        keywords: [juice, milk, water]
+        hints:
+          sprout: "Say: juice"
+          explorer: "Say: I want juice."
+          star: "Say: I would like some apple juice, please."
+        hints_zh:
+          sprout: "说：juice"
+          explorer: "说：I want juice."
+          star: "说：I would like some apple juice, please."
+        retry_prompt: Try saying what you want to drink.
+      - kind: free_expression
+        goal: say what food you like
+        role_prompt: What would you like to eat?
+        targets:
+          sprout: [rice]
+          explorer: ["I like rice."]
+          star: ["I would like some rice with vegetables."]
+        keywords: [rice, noodles, fruit]
+        hints:
+          sprout: "Say: rice"
+          explorer: "Say: I like rice."
+          star: "Say: I would like some rice with vegetables."
+        hints_zh:
+          sprout: "说：rice"
+          explorer: "说：I like rice."
+          star: "说：I would like some rice with vegetables."
+        retry_prompt: Try saying what you like to eat.
+      - kind: goodbye
+        goal: say thank you
+        role_prompt: Here is your food!
+        targets:
+          sprout: [thanks]
+          explorer: ["Thank you!"]
+          star: ["Thank you, it looks delicious!"]
+        keywords: [thanks, thank]
+        hints:
+          sprout: "Say: thanks"
+          explorer: "Say: Thank you!"
+          star: "Say: Thank you, it looks delicious!"
+        hints_zh:
+          sprout: "说：thanks"
+          explorer: "说：Thank you!"
+          star: "说：Thank you, it looks delicious!"
+        retry_prompt: Try saying thank you.
+
+  - theme: transport
+    title: Bus to the Park
+    setting: at a bus stop
+    role: Parent
+    goal: talk about going to the park by bus
+    expressions:
+      sprout: [bus, park]
+      explorer: ["Let's take the bus.", "I want to go to the park."]
+      star: ["Shall we take the bus to the park?", "How long does it take to get there?"]
+    steps:
+      - kind: greeting
+        goal: greet the parent
+        role_prompt: Are you ready to go to the park?
+        targets:
+          sprout: ["yes"]
+          explorer: ["Yes, I am ready."]
+          star: ["Yes, I am ready to go to the park."]
+        keywords: ["yes", ready]
+        hints:
+          sprout: "Say: yes"
+          explorer: "Say: Yes, I am ready."
+          star: "Say: Yes, I am ready to go to the park."
+        hints_zh:
+          sprout: "说：yes"
+          explorer: "说：Yes, I am ready."
+          star: "说：Yes, I am ready to go to the park."
+        retry_prompt: Try saying yes.
+      - kind: task
+        goal: choose the bus
+        role_prompt: How shall we go to the park?
+        targets:
+          sprout: [bus]
+          explorer: ["Let's take the bus."]
+          star: ["Shall we take the bus to the park?"]
+        keywords: [bus, walk, bike]
+        hints:
+          sprout: "Say: bus"
+          explorer: "Say: Let's take the bus."
+          star: "Say: Shall we take the bus to the park?"
+        hints_zh:
+          sprout: "说：bus"
+          explorer: "说：Let's take the bus."
+          star: "说：Shall we take the bus to the park?"
+        retry_prompt: Try saying how to go.
+      - kind: free_expression
+        goal: say what to do at the park
+        role_prompt: What would you like to do at the park?
+        targets:
+          sprout: [play]
+          explorer: ["I want to play."]
+          star: ["I would like to play on the swing."]
+        keywords: [play, swing, slide]
+        hints:
+          sprout: "Say: play"
+          explorer: "Say: I want to play."
+          star: "Say: I would like to play on the swing."
+        hints_zh:
+          sprout: "说：play"
+          explorer: "说：I want to play."
+          star: "说：I would like to play on the swing."
+        retry_prompt: Try saying what you want to do.
+      - kind: goodbye
+        goal: respond to the bus arriving
+        role_prompt: The bus is coming!
+        targets:
+          sprout: [ok]
+          explorer: ["Okay, let's go!"]
+          star: ["Great, let's get on the bus!"]
+        keywords: [ok, okay, go]
+        hints:
+          sprout: "Say: ok"
+          explorer: "Say: Okay, let's go!"
+          star: "Say: Great, let's get on the bus!"
+        hints_zh:
+          sprout: "说：ok"
+          explorer: "说：Okay, let's go!"
+          star: "说：Great, let's get on the bus!"
+        retry_prompt: Try saying okay.
+  - theme: friends
+    title: Meet a New Friend
+    setting: at the playground
+    role: A friendly child
+    goal: greet a new friend and invite them to play
+    expressions:
+      sprout: [hello, play]
+      explorer: ["Hello, I am happy.", "Let's play together."]
+      star: ["Hello, it is nice to meet you.", "Would you like to play with me?"]
+    steps:
+      - kind: greeting
+        goal: greet the new friend
+        role_prompt: Hi, I am new here!
+        targets:
+          sprout: [hello]
+          explorer: ["Hello!"]
+          star: ["Hello, it is nice to meet you."]
+        keywords: [hello, hi]
+        hints:
+          sprout: "Say: hello"
+          explorer: "Say: Hello!"
+          star: "Say: Hello, it is nice to meet you."
+        hints_zh:
+          sprout: "说：hello"
+          explorer: "说：Hello!"
+          star: "说：Hello, it is nice to meet you."
+        retry_prompt: Try saying hello.
+      - kind: task
+        goal: share an interest
+        role_prompt: What do you like to do?
+        targets:
+          sprout: [play]
+          explorer: ["I like to play."]
+          star: ["I like drawing and playing football."]
+        keywords: [play, draw, football]
+        hints:
+          sprout: "Say: play"
+          explorer: "Say: I like to play."
+          star: "Say: I like drawing and playing football."
+        hints_zh:
+          sprout: "说：play"
+          explorer: "说：I like to play."
+          star: "说：I like drawing and playing football."
+        retry_prompt: Try saying what you like.
+      - kind: free_expression
+        goal: invite the friend to play
+        role_prompt: Would you like to play with me?
+        targets:
+          sprout: ["yes"]
+          explorer: ["Yes, let's play!"]
+          star: ["Yes, I would love to play with you."]
+        keywords: ["yes", play]
+        hints:
+          sprout: "Say: yes"
+          explorer: "Say: Yes, let's play!"
+          star: "Say: Yes, I would love to play with you."
+        hints_zh:
+          sprout: "说：yes"
+          explorer: "说：Yes, let's play!"
+          star: "说：Yes, I would love to play with you."
+        retry_prompt: Try saying yes.
+      - kind: goodbye
+        goal: say goodbye
+        role_prompt: See you later!
+        targets:
+          sprout: [bye]
+          explorer: ["See you!"]
+          star: ["See you later, it was fun!"]
+        keywords: [bye, see]
+        hints:
+          sprout: "Say: bye"
+          explorer: "Say: See you!"
+          star: "Say: See you later, it was fun!"
+        hints_zh:
+          sprout: "说：bye"
+          explorer: "说：See you!"
+          star: "说：See you later, it was fun!"
+        retry_prompt: Try saying goodbye.

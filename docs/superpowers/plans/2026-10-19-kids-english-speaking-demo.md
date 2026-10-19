@@ -183,6 +183,7 @@ Create `backend/app/config.py`:
 
 ```python
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -195,7 +196,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_env: str = "development"
+    app_env: Literal["development", "test", "production"] = "development"
     hmac_secret: str = "dev-only-change-me"
     scene_ttl_seconds: int = Field(default=7200, ge=60)
     max_audio_bytes: int = Field(default=5_000_000, ge=100_000)
@@ -293,7 +294,6 @@ pydantic-settings>=2.7,<3
 httpx>=0.28,<1
 pyyaml>=6.0,<7
 aliyun-python-sdk-core>=2.16,<3
-aliyun-python-sdk-nls>=2.0,<3
 ```
 
 Create `backend/requirements-dev.txt`:
@@ -302,6 +302,7 @@ Create `backend/requirements-dev.txt`:
 -r requirements.txt
 pytest>=8.3,<9
 pytest-asyncio>=0.25,<1
+httpx2>=2,<3
 playwright>=1.49,<2
 ruff>=0.8,<1
 ```
@@ -3603,12 +3604,16 @@ import time
 
 import httpx
 from aliyunsdkcore.client import AcsClient
-from aliyunsdknls.request.v20190228.CreateTokenRequest import (
-    CreateTokenRequest,
-)
+from aliyunsdkcore.request import RpcRequest
 
 from app.config import Settings
 from app.providers.base import ASRResult, ProviderError, TTSResult
+
+
+class CreateTokenRequest(RpcRequest):
+    def __init__(self):
+        super().__init__("nls-meta", "2019-02-28", "CreateToken")
+        self.set_method("POST")
 
 
 class AliyunTokenCache:

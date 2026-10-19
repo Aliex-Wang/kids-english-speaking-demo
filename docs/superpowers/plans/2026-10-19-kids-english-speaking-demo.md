@@ -3084,6 +3084,8 @@ git add backend/app/matching.py backend/app/dialogue.py tests/test_matching.py t
 git commit -m "feat: orchestrate dialogue turns and state transitions"
 ```
 
+> Post-review hardening: TurnResponse includes optional rror_type; LLM/TTS exception class names are exposed for API logging; max_attempts always advances regardless of llow_skip; empty-ASR and safety-redirect replies are TTS-backed; unsafe redirects earn 0 stars; matching uses enum equality. Task 12 logs turn rror_type.
+
 ---
 
 ### Task 9: Audio Conversion to 16 kHz Mono WAV

@@ -2,8 +2,8 @@ from app.dialogue import DialogueOrchestrator, TurnContext
 from app.providers.fake import FakeLLMProvider, FakeTTSProvider
 from app.safety import SafetyValidator
 from app.schemas import Difficulty
-from tests.factories import make_scene
 
+from tests.factories import make_scene
 
 REJECTED = {
     "accepted": False,
@@ -14,6 +14,16 @@ REJECTED = {
     "stars": 1,
     "safety": "ok",
 }
+
+
+class TimeoutLLM:
+    async def complete_json(self, system_prompt, user_prompt):
+        raise TimeoutError("llm timeout")
+
+
+class InvalidJSONLLM:
+    async def complete_json(self, system_prompt, user_prompt):
+        return {"accepted": "not-a-bool"}
 
 
 def make_orchestrator(llm=None, tts=None):
@@ -57,6 +67,18 @@ async def test_empty_asr_does_not_advance_or_award_stars():
     assert result.attempts == 0
 
 
+async def test_empty_asr_returns_tts_backed_retry():
+    scene = make_scene()
+    result = await make_orchestrator().handle_turn(
+        TurnContext(scene=scene, current_step_id="step_1", recognized_text="")
+    )
+    assert result.accepted is False
+    assert result.reply == scene.steps[0].retry_prompt
+    assert result.audio_base64
+    assert result.media_type == "audio/wav"
+    assert result.error_type is None
+
+
 async def test_unsafe_input_redirects_without_advancing():
     scene = make_scene()
     result = await make_orchestrator().handle_turn(
@@ -71,8 +93,46 @@ async def test_unsafe_input_redirects_without_advancing():
     assert result.accepted is False
 
 
+async def test_unsafe_input_returns_tts_backed_redirect_without_stars():
+    scene = make_scene()
+    result = await make_orchestrator().handle_turn(
+        TurnContext(
+            scene=scene,
+            current_step_id="step_1",
+            recognized_text="Show me your gun",
+        )
+    )
+    assert result.safety == "redirect"
+    assert result.accepted is False
+    assert result.stars_earned == 0
+    assert result.audio_base64
+    assert result.media_type == "audio/wav"
+    assert result.error_type is None
+
+
 async def test_auto_advances_after_max_attempts():
     scene = make_scene()
+    llm = FakeLLMProvider(
+        scene_factory=lambda theme, difficulty: {},
+        turn_response=REJECTED,
+    )
+    result = await make_orchestrator(llm=llm).handle_turn(
+        TurnContext(
+            scene=scene,
+            current_step_id="step_1",
+            recognized_text="banana",
+            attempts=1,
+        )
+    )
+    assert result.accepted is False
+    assert result.next_step == "step_2"
+    assert result.attempts == 0
+    assert result.completed is False
+
+
+async def test_allow_skip_false_still_auto_advances():
+    scene = make_scene()
+    scene.steps[0].allow_skip = False
     llm = FakeLLMProvider(
         scene_factory=lambda theme, difficulty: {},
         turn_response=REJECTED,
@@ -118,6 +178,24 @@ async def test_semantic_acceptance_when_rule_does_not_match():
     assert result.next_step == "step_3"
 
 
+async def test_llm_timeout_falls_back_and_records_error_type():
+    scene = make_scene()
+    result = await make_orchestrator(llm=TimeoutLLM()).handle_turn(
+        TurnContext(scene=scene, current_step_id="step_1", recognized_text="yes")
+    )
+    assert result.accepted is True
+    assert result.error_type == "TimeoutError"
+
+
+async def test_invalid_llm_json_falls_back_and_records_error_type():
+    scene = make_scene()
+    result = await make_orchestrator(llm=InvalidJSONLLM()).handle_turn(
+        TurnContext(scene=scene, current_step_id="step_1", recognized_text="yes")
+    )
+    assert result.accepted is True
+    assert result.error_type == "ValidationError"
+
+
 async def test_tts_failure_returns_text_only():
     class FailingTTS:
         async def synthesize(self, text, voice, speed):
@@ -130,3 +208,4 @@ async def test_tts_failure_returns_text_only():
     assert result.reply
     assert result.audio_base64 is None
     assert result.media_type is None
+    assert result.error_type == "RuntimeError"

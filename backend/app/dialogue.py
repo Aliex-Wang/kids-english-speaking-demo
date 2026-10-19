@@ -60,7 +60,7 @@ class DialogueOrchestrator:
         text = context.recognized_text.strip()
 
         if not text:
-            return self._retry(
+            return await self._retry(
                 step,
                 context,
                 message="I didn't hear you. Let's try again.",
@@ -68,26 +68,32 @@ class DialogueOrchestrator:
                 attempts=context.attempts,
             )
         if self.safety.violations(text):
-            return self._safe_redirect(step, context)
+            return await self._safe_redirect(step, context)
 
         next_step = self._next_step(context.scene, step)
-        judgement = await self._judge(context, step, next_step)
+        judgement, judgement_error = await self._judge(
+            context, step, next_step
+        )
         if judgement and judgement.safety == "redirect":
-            return self._safe_redirect(step, context)
+            return await self._safe_redirect(step, context)
 
         accepted = rule_match(text, step, context.scene.difficulty) or bool(
             judgement and judgement.accepted
         )
         if accepted:
-            return await self._accepted(context, step, next_step, judgement)
-        return await self._not_accepted(context, step, next_step, judgement)
+            return await self._accepted(
+                context, step, next_step, judgement, judgement_error
+            )
+        return await self._not_accepted(
+            context, step, next_step, judgement, judgement_error
+        )
 
     async def _judge(
         self,
         context: TurnContext,
         step: SceneStep,
         next_step: SceneStep | None,
-    ) -> TurnJudgement | None:
+    ) -> tuple[TurnJudgement | None, str | None]:
         prompt = build_turn_prompt(
             context.scene,
             step,
@@ -102,18 +108,18 @@ class DialogueOrchestrator:
                 timeout=self.timeout_seconds,
             )
             judgement = TurnJudgement.model_validate(payload)
-        except Exception:
-            return None
+        except Exception as exc:  # noqa: BLE001
+            return None, type(exc).__name__
 
         if self.safety.violations(
-            " ".join([judgement.feedback, judgement.reply, judgement.hint])
+            f"{judgement.feedback} {judgement.reply} {judgement.hint}"
         ):
-            return None
+            return None, None
         if next_step is not None:
             profile = PROFILES[context.scene.difficulty]
             if count_sentences(judgement.reply) > profile.max_reply_sentences:
-                return None
-        return judgement
+                return None, None
+        return judgement, None
 
     async def _accepted(
         self,
@@ -121,6 +127,7 @@ class DialogueOrchestrator:
         step: SceneStep,
         next_step: SceneStep | None,
         judgement: TurnJudgement | None,
+        judgement_error: str | None,
     ) -> TurnResponse:
         feedback = judgement.feedback if judgement else "Great job!"
         if next_step is None:
@@ -135,7 +142,7 @@ class DialogueOrchestrator:
             reply = judgement.reply if judgement else next_step.role_prompt
             next_step_id = next_step.step_id
             completed = False
-        audio_base64, media_type = await self._tts(
+        audio_base64, media_type, tts_error = await self._tts(
             reply, context.scene.difficulty
         )
         return TurnResponse(
@@ -151,6 +158,7 @@ class DialogueOrchestrator:
             completed=completed,
             audio_base64=audio_base64,
             media_type=media_type,
+            error_type=tts_error or judgement_error,
         )
 
     async def _not_accepted(
@@ -159,9 +167,10 @@ class DialogueOrchestrator:
         step: SceneStep,
         next_step: SceneStep | None,
         judgement: TurnJudgement | None,
+        judgement_error: str | None,
     ) -> TurnResponse:
         attempts = context.attempts + 1
-        if attempts >= step.max_attempts and step.allow_skip:
+        if attempts >= step.max_attempts:
             if next_step is None:
                 reply = "Great job! See you next time."
                 next_step_id = None
@@ -172,7 +181,7 @@ class DialogueOrchestrator:
                 next_step_id = next_step.step_id
                 completed = False
                 feedback = "Nice try! Let's keep going."
-            audio_base64, media_type = await self._tts(
+            audio_base64, media_type, tts_error = await self._tts(
                 reply, context.scene.difficulty
             )
             return TurnResponse(
@@ -188,10 +197,11 @@ class DialogueOrchestrator:
                 completed=completed,
                 audio_base64=audio_base64,
                 media_type=media_type,
+                error_type=tts_error or judgement_error,
             )
 
         reply = step.retry_prompt
-        audio_base64, media_type = await self._tts(
+        audio_base64, media_type, tts_error = await self._tts(
             reply, context.scene.difficulty
         )
         return TurnResponse(
@@ -207,9 +217,10 @@ class DialogueOrchestrator:
             completed=False,
             audio_base64=audio_base64,
             media_type=media_type,
+            error_type=tts_error or judgement_error,
         )
 
-    def _retry(
+    async def _retry(
         self,
         step: SceneStep,
         context: TurnContext,
@@ -217,6 +228,9 @@ class DialogueOrchestrator:
         stars: int,
         attempts: int,
     ) -> TurnResponse:
+        audio_base64, media_type, tts_error = await self._tts(
+            step.retry_prompt, context.scene.difficulty
+        )
         return TurnResponse(
             recognized_text="",
             accepted=False,
@@ -228,15 +242,19 @@ class DialogueOrchestrator:
             safety="ok",
             attempts=attempts,
             completed=False,
-            audio_base64=None,
-            media_type=None,
+            audio_base64=audio_base64,
+            media_type=media_type,
+            error_type=tts_error,
         )
 
-    def _safe_redirect(
+    async def _safe_redirect(
         self,
         step: SceneStep,
         context: TurnContext,
     ) -> TurnResponse:
+        audio_base64, media_type, tts_error = await self._tts(
+            step.retry_prompt, context.scene.difficulty
+        )
         return TurnResponse(
             recognized_text=context.recognized_text,
             accepted=False,
@@ -244,19 +262,20 @@ class DialogueOrchestrator:
             reply=step.retry_prompt,
             hint=step.hint_en,
             next_step=step.step_id,
-            stars_earned=1,
+            stars_earned=0,
             safety="redirect",
             attempts=context.attempts,
             completed=False,
-            audio_base64=None,
-            media_type=None,
+            audio_base64=audio_base64,
+            media_type=media_type,
+            error_type=tts_error,
         )
 
     async def _tts(
         self,
         text: str,
         difficulty: Difficulty,
-    ) -> tuple[str | None, str | None]:
+    ) -> tuple[str | None, str | None, str | None]:
         profile = PROFILES[difficulty]
         try:
             result = await asyncio.wait_for(
@@ -267,10 +286,10 @@ class DialogueOrchestrator:
                 ),
                 timeout=self.timeout_seconds,
             )
-        except Exception:
-            return None, None
+        except Exception as exc:  # noqa: BLE001
+            return None, None, type(exc).__name__
         encoded = base64.b64encode(result.audio).decode("ascii")
-        return encoded, result.media_type
+        return encoded, result.media_type, None
 
     @staticmethod
     def _find_step(scene: SceneSpec, step_id: str) -> SceneStep:
@@ -288,3 +307,4 @@ class DialogueOrchestrator:
         if step.next_step is None:
             return None
         return cls._find_step(scene, step.next_step)
+

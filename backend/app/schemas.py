@@ -109,6 +109,7 @@ class TurnResponse(BaseModel):
     completed: bool
     audio_base64: str | None = None
     media_type: str | None = None
+    error_type: str | None = None
 
 
 class EventName(str, Enum):
@@ -122,3 +123,4 @@ class EventName(str, Enum):
 class EventRequest(BaseModel):
     name: EventName
     properties: dict[str, str | int | bool] = Field(default_factory=dict)
+

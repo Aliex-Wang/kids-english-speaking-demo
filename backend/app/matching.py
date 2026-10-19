@@ -20,9 +20,10 @@ def phrase_in_text(phrase: str, text: str) -> bool:
 def rule_match(text: str, step: SceneStep, difficulty: Difficulty) -> bool:
     if any(phrase_in_text(phrase, text) for phrase in step.target_phrases):
         return True
-    if difficulty is Difficulty.sprout:
+    if difficulty == Difficulty.sprout:
         return any(
             phrase_in_text(keyword, text)
             for keyword in step.accepted_keywords
         )
     return False
+

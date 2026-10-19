@@ -1500,10 +1500,10 @@ templates:
         goal: greet the child
         role_prompt: Good morning, are you ready for breakfast?
         targets:
-          sprout: [yes]
+          sprout: ["yes"]
           explorer: ["Yes, I am ready."]
           star: ["Yes, I am ready for breakfast."]
-        keywords: [yes, ready]
+        keywords: ["yes", "ready"]
         hints:
           sprout: "Say: yes"
           explorer: "Say: Yes, I am ready."
@@ -1822,10 +1822,10 @@ Append this fragment to the same `fallback_scenes.yaml` file:
         goal: greet the parent
         role_prompt: Are you ready to go to the park?
         targets:
-          sprout: [yes]
+          sprout: ["yes"]
           explorer: ["Yes, I am ready."]
           star: ["Yes, I am ready to go to the park."]
-        keywords: [yes, ready]
+        keywords: ["yes", "ready"]
         hints:
           sprout: "Say: yes"
           explorer: "Say: Yes, I am ready."
@@ -1939,7 +1939,7 @@ Append this final fragment to the same `fallback_scenes.yaml` file:
         goal: invite the friend to play
         role_prompt: Would you like to play with me?
         targets:
-          sprout: [yes]
+          sprout: ["yes"]
           explorer: ["Yes, let's play!"]
           star: ["Yes, I would love to play with you."]
         keywords: [yes, play]

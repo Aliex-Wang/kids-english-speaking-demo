@@ -84,18 +84,34 @@ function speak(text, rate = profile.speech_rate) {
   window.speechSynthesis.speak(utterance);
 }
 
-function playAudio(base64, mediaType, rate = 1) {
+async function playAudio(base64, mediaType, rate = 1) {
   if (!base64) return false;
   const audio = new Audio(
     `data:${mediaType || 'audio/mpeg'};base64,${base64}`,
   );
   audio.playbackRate = rate;
-  audio.play().catch(() => {});
-  return true;
+  let timeout = null;
+  try {
+    await Promise.race([
+      audio.play(),
+      new Promise((_, reject) => {
+        timeout = window.setTimeout(
+          () => reject(new Error('audio playback timed out')),
+          2000,
+        );
+      }),
+    ]);
+    return true;
+  } catch {
+    audio.pause();
+    return false;
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
-function playOpening() {
-  if (!playAudio(state.openingAudioBase64, state.openingMediaType)) {
+async function playOpening() {
+  if (!(await playAudio(state.openingAudioBase64, state.openingMediaType))) {
     speak(state.openingText, profile.speech_rate);
   }
 }
@@ -161,6 +177,8 @@ function showEnd() {
 async function sendTurn({audio, textInput}) {
   setStatus('识别中...');
   elements.micButton.disabled = true;
+  elements.textInput.disabled = true;
+  elements.textSubmit.disabled = true;
   try {
     const response = await submitTurn({
       audio,
@@ -173,14 +191,26 @@ async function sendTurn({audio, textInput}) {
       helpUsed: state.helpUsed,
     });
     handleResponse(response);
-  } catch {
-    setStatus('没有听清，请再试一次。');
+  } catch (error) {
+    let message = '没有听清，请再试一次。';
+    let errorType = 'turn';
+    if (error?.name === 'TimeoutError') {
+      message = '等得有点久，请再试一次。';
+      errorType = 'timeout';
+    } else if (error?.name === 'TypeError') {
+      message = '网络暂时没有连上，请再试一次。';
+      errorType = 'network';
+    }
+    setStatus(message);
     logEvent('technical_error', {
       difficulty: state.difficulty,
-      error_type: 'turn',
+      error_type: errorType,
     });
   } finally {
     elements.micButton.disabled = false;
+    elements.textInput.disabled = false;
+    elements.textSubmit.disabled = false;
+    elements.micLabel.textContent = '点击开始说话';
   }
 }
 
@@ -237,9 +267,10 @@ function handleResponse(response) {
   lastReplyText = response.reply;
   lastReplyAudio = response.audio_base64;
   lastReplyMediaType = response.media_type;
-  if (!playAudio(lastReplyAudio, lastReplyMediaType)) {
-    speak(lastReplyText, profile.speech_rate);
-  }
+  const replyText = lastReplyText;
+  void playAudio(lastReplyAudio, lastReplyMediaType).then((played) => {
+    if (!played) speak(replyText, profile.speech_rate);
+  });
 }
 
 function createRecorder() {
@@ -263,17 +294,17 @@ function createRecorder() {
 }
 
 function handleMicClick() {
-  if (!recorder.isRecording()) {
-    recorder.start().then((started) => {
-      if (started) {
-        elements.micButton.classList.add('recording');
-        elements.micLabel.textContent = '点击结束录音';
-        setStatus('录音中... 点击麦克风结束');
-      }
-    });
-  } else {
+  if (recorder.isRecording() || recorder.isStarting()) {
     recorder.stop();
+    return;
   }
+  recorder.start().then((started) => {
+    if (started) {
+      elements.micButton.classList.add('recording');
+      elements.micLabel.textContent = '点击结束录音';
+      setStatus('录音中... 点击麦克风结束');
+    }
+  });
 }
 
 function showHelp() {
@@ -305,21 +336,21 @@ function initialize() {
   }
 }
 
-elements.beginButton.addEventListener('click', () => {
+elements.beginButton.addEventListener('click', async () => {
   state.hasStarted = true;
   save();
   showDialogue();
   renderStep();
-  playOpening();
+  await playOpening();
 });
 elements.replayOpening.addEventListener('click', playOpening);
-elements.replayReply.addEventListener('click', () => {
-  if (!playAudio(lastReplyAudio, lastReplyMediaType)) {
+elements.replayReply.addEventListener('click', async () => {
+  if (!(await playAudio(lastReplyAudio, lastReplyMediaType))) {
     speak(lastReplyText, profile.speech_rate);
   }
 });
-elements.slowReply.addEventListener('click', () => {
-  if (!playAudio(lastReplyAudio, lastReplyMediaType, 0.7)) {
+elements.slowReply.addEventListener('click', async () => {
+  if (!(await playAudio(lastReplyAudio, lastReplyMediaType, 0.7))) {
     speak(lastReplyText, 0.7);
   }
 });

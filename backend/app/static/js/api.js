@@ -36,17 +36,34 @@ export async function submitTurn({
   if (textInput) {
     form.append('text_input', textInput);
   }
-  const response = await fetch('/api/turn', {
-    method: 'POST',
-    body: form,
-  });
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    const message = payload.detail?.message
-      || `turn request failed: ${response.status}`;
-    throw new Error(message);
+  const controller = new AbortController();
+  const timeout = window.setTimeout(
+    () => controller.abort(),
+    15000,
+  );
+  try {
+    const response = await fetch('/api/turn', {
+      method: 'POST',
+      body: form,
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      const message = payload.detail?.message
+        || `turn request failed: ${response.status}`;
+      throw new Error(message);
+    }
+    return await response.json();
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      const timeoutError = new Error('turn request timed out');
+      timeoutError.name = 'TimeoutError';
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
   }
-  return response.json();
 }
 
 export async function logEvent(name, properties = {}) {

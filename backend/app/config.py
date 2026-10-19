@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -11,7 +12,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_env: str = "development"
+    app_env: Literal["development", "test", "production"] = "development"
     hmac_secret: str = "dev-only-change-me"
     scene_ttl_seconds: int = Field(default=7200, ge=60)
     max_audio_bytes: int = Field(default=5_000_000, ge=100_000)

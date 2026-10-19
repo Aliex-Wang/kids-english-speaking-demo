@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}English Play{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <main class="app-shell">
+    {% block content %}{% endblock %}
+  </main>
+  <script>
+    window.__APP_CONFIG__ = {{ app_config_json | safe }};
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

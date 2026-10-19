@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Practice{% endblock %}
+{% block content %}
+<section id="task-intro" class="screen">
+  <div id="theme-visual" class="theme-visual" aria-hidden="true"></div>
+  <p class="eyebrow">任务介绍</p>
+  <h1 id="scene-title"></h1>
+  <p id="scene-goal"></p>
+  <div id="opening-text" class="bubble" data-testid="opening-text"></div>
+  <div class="button-row">
+    <button id="replay-opening" data-testid="replay-opening" class="secondary-button" type="button">再听一次</button>
+    <button id="begin-button" data-testid="begin-button" class="primary-button" type="button">开始对话</button>
+  </div>
+</section>
+
+<section id="dialogue" class="screen hidden">
+  <header class="practice-header">
+    <div id="practice-theme-icon" class="theme-icon" aria-hidden="true"></div>
+    <div>
+      <p class="eyebrow" id="practice-theme-name"></p>
+      <h1 id="practice-title"></h1>
+      <p id="progress-label" data-testid="progress-label"></p>
+    </div>
+  </header>
+
+  <div id="ai-bubble" data-testid="ai-bubble" class="bubble" aria-live="polite"></div>
+  <div class="button-row">
+    <button id="replay-reply" data-testid="replay-reply" class="secondary-button" type="button">再听一次</button>
+    <button id="slow-reply" data-testid="slow-reply" class="secondary-button" type="button">慢速播放</button>
+  </div>
+
+  <p id="hint" data-testid="hint" class="hint hidden"></p>
+
+  <button id="mic-button" data-testid="mic-button" class="mic-button" type="button">
+    <span class="mic-icon" aria-hidden="true">🎤</span>
+    <span id="mic-label">点击开始说话</span>
+  </button>
+  <button id="help-button" data-testid="help-button" class="secondary-button" type="button">帮帮我</button>
+
+  <div id="text-fallback" class="text-fallback hidden">
+    <label for="text-input">也可以输入你的回答</label>
+    <input id="text-input" data-testid="text-input" type="text" autocomplete="off">
+    <button id="text-submit" data-testid="text-submit" class="primary-button" type="button">提交回答</button>
+  </div>
+
+  <p id="status" data-testid="status" class="status" aria-live="polite"></p>
+</section>
+
+<section id="end-screen" data-testid="end-screen" class="screen hidden">
+  <p class="eyebrow">练习完成</p>
+  <h1>太棒了！</h1>
+  <p id="stars" data-testid="stars" class="stars"></p>
+  <h2>今天的目标表达</h2>
+  <ul id="target-expressions" class="target-list"></ul>
+  <div class="button-row">
+    <button id="restart-button" data-testid="restart-button" class="primary-button" type="button">再练一次</button>
+    <button id="change-difficulty" data-testid="change-difficulty" class="secondary-button" type="button">换难度</button>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="/static/js/practice.js"></script>
+{% endblock %}

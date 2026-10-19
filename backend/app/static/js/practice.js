@@ -1,6 +1,12 @@
-import {logEvent, submitTurn} from './api.js';
+import {createScene, logEvent, submitTurn} from './api.js';
 import {MicRecorder} from './recorder.js';
-import {loadPractice, savePractice} from './storage.js';
+import {
+  clearPractice,
+  loadPractice,
+  loadRecentThemes,
+  recordRecentTheme,
+  savePractice,
+} from './storage.js';
 
 const config = window.__APP_CONFIG__;
 const state = loadPractice();
@@ -55,6 +61,8 @@ const elements = {
   restartButton: document.getElementById('restart-button'),
   changeDifficulty: document.getElementById('change-difficulty'),
 };
+
+elements.targetExpressions.setAttribute('data-testid', 'target-expressions');
 
 let lastReplyText = '';
 let lastReplyAudio = null;
@@ -324,6 +332,47 @@ function showHelp() {
   });
 }
 
+async function restartPractice() {
+  elements.restartButton.disabled = true;
+  setStatus('正在准备新的场景...');
+  try {
+    const response = await createScene(
+      state.difficulty,
+      loadRecentThemes(),
+    );
+    const nextScene = response.envelope.scene;
+    recordRecentTheme(nextScene.theme);
+    clearPractice();
+    savePractice({
+      difficulty: state.difficulty,
+      avatar: state.avatar,
+      envelope: response.envelope,
+      signature: response.signature,
+      openingText: response.opening_text,
+      openingAudioBase64: response.opening_audio_base64,
+      openingMediaType: response.opening_media_type,
+      currentStepId: nextScene.steps[0].step_id,
+      attempts: 0,
+      stars: 0,
+      completedStepIds: [],
+      targetExpressionsCompleted: [],
+      history: [],
+      helpUsed: false,
+      hasStarted: false,
+      completed: false,
+      lastPracticeAt: new Date().toISOString(),
+    });
+    logEvent('practice_restarted', {
+      difficulty: state.difficulty,
+      theme: nextScene.theme,
+    });
+    window.location.reload();
+  } catch {
+    setStatus('新场景准备失败，请再试一次。');
+    elements.restartButton.disabled = false;
+  }
+}
+
 function initialize() {
   renderIntro();
   if (state.completed) {
@@ -371,9 +420,7 @@ elements.textInput.addEventListener('keydown', (event) => {
 elements.changeDifficulty.addEventListener('click', () => {
   window.location.href = '/';
 });
-elements.restartButton.addEventListener('click', () => {
-  window.location.reload();
-});
+elements.restartButton.addEventListener('click', restartPractice);
 
 recorder = createRecorder();
 initialize();

@@ -2,7 +2,7 @@ import base64
 import hashlib
 import hmac
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.schemas import SceneEnvelope, SceneSpec
 
@@ -16,7 +16,7 @@ def make_envelope(
     ttl_seconds: int,
     now: datetime | None = None,
 ) -> SceneEnvelope:
-    issued_at = now or datetime.now(timezone.utc)
+    issued_at = now or datetime.now(UTC)
     return SceneEnvelope(
         scene=scene,
         issued_at=issued_at,
@@ -49,8 +49,13 @@ def verify_envelope(
     now: datetime | None = None,
 ) -> None:
     expected = sign_envelope(envelope, secret)
-    if not hmac.compare_digest(expected, signature):
+    try:
+        expected_bytes = expected.encode("ascii")
+        signature_bytes = signature.encode("ascii")
+    except UnicodeEncodeError as exc:
+        raise SceneSignatureError("invalid signature") from exc
+    if not hmac.compare_digest(expected_bytes, signature_bytes):
         raise SceneSignatureError("invalid signature")
-    current = now or datetime.now(timezone.utc)
+    current = now or datetime.now(UTC)
     if envelope.expires_at <= current:
         raise SceneSignatureError("scene expired")

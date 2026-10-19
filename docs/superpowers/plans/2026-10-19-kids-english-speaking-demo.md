@@ -2550,6 +2550,8 @@ git add backend/app/scene_generator.py tests/test_scene_generator.py
 git commit -m "feat: generate scenes with retry and fallback"
 ```
 
+> Post-review hardening: GeneratedScene includes ttempts and rror_type; fallback scenes are revalidated; Task 12 logs rror_type. Task 7 tests cover backend overrides and exactly two attempts.
+
 ---
 
 ### Task 8: Rule Matching and Dialogue Orchestration

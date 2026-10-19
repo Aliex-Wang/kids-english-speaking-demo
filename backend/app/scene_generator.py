@@ -15,6 +15,8 @@ from app.theme_selector import ThemeSelector
 class GeneratedScene:
     scene: SceneSpec
     fallback_used: bool
+    attempts: int = 0
+    error_type: str | None = None
 
 
 class SceneGenerator:
@@ -45,8 +47,9 @@ class SceneGenerator:
         theme = self.catalog.by_id(theme_id)
         profile = PROFILES[difficulty]
         prompt = build_scene_prompt(theme, difficulty, profile)
+        last_error_type: str | None = None
 
-        for _ in range(self.max_attempts):
+        for attempt in range(1, self.max_attempts + 1):
             try:
                 payload = await asyncio.wait_for(
                     self.llm.complete_json(SCENE_SYSTEM_PROMPT, prompt),
@@ -61,11 +64,19 @@ class SceneGenerator:
                     }
                 )
                 self.validator.validate(scene)
-                return GeneratedScene(scene=scene, fallback_used=False)
-            except Exception:
-                continue
+                return GeneratedScene(
+                    scene=scene,
+                    fallback_used=False,
+                    attempts=attempt,
+                )
+            except Exception as exc:  # noqa: BLE001 - fallback covers provider failures
+                last_error_type = type(exc).__name__
 
+        fallback_scene = self.fallback.build(theme_id, difficulty)
+        self.validator.validate(fallback_scene)
         return GeneratedScene(
-            scene=self.fallback.build(theme_id, difficulty),
+            scene=fallback_scene,
             fallback_used=True,
+            attempts=self.max_attempts,
+            error_type=last_error_type,
         )

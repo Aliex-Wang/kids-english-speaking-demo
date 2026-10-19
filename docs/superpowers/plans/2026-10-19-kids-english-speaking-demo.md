@@ -2360,7 +2360,7 @@ git add backend/app/providers/__init__.py backend/app/providers/base.py backend/
 git commit -m "feat: add provider interfaces and deterministic fakes"
 ```
 
----
+> Post-review hardening: the delivered Task 6 prompt contract JSON-encodes all dynamic turn fields, uses `NEXT_ROLE_PROMPT_JSON`, and treats `CHILD_TEXT_JSON` as untrusted. Task 7's valid-generator test uses Sprout because the shared `make_scene()` Explorer default is not profile-valid.`n`n---
 
 ### Task 7: Scene Generator with Retry and Fallback
 
@@ -2410,7 +2410,7 @@ async def test_generator_returns_llm_scene_when_valid():
         ).model_dump(mode="json")
     )
     generated = await build_generator(llm).generate(
-        Difficulty.explorer, [ThemeId.family, ThemeId.school]
+        Difficulty.sprout, [ThemeId.family, ThemeId.school]
     )
     assert generated.fallback_used is False
     assert generated.scene.theme not in {ThemeId.family, ThemeId.school}
@@ -2446,8 +2446,8 @@ async def test_generator_prompt_contains_difficulty_and_theme():
             return make_scene().model_dump(mode="json")
 
     llm = CapturingLLM()
-    generated = await build_generator(llm).generate(Difficulty.explorer, [])
-    assert "DIFFICULTY: explorer" in captured["prompt"]
+    generated = await build_generator(llm).generate(Difficulty.sprout, [])
+    assert "DIFFICULTY: sprout" in captured["prompt"]
     assert f"THEME: {generated.scene.theme.value}" in captured["prompt"]
 ```
 

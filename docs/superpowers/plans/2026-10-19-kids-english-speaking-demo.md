@@ -2360,7 +2360,9 @@ git add backend/app/providers/__init__.py backend/app/providers/base.py backend/
 git commit -m "feat: add provider interfaces and deterministic fakes"
 ```
 
-> Post-review hardening: the delivered Task 6 prompt contract JSON-encodes all dynamic turn fields, uses `NEXT_ROLE_PROMPT_JSON`, and treats `CHILD_TEXT_JSON` as untrusted. Task 7's valid-generator test uses Sprout because the shared `make_scene()` Explorer default is not profile-valid.`n`n---
+> Post-review hardening: the delivered Task 6 prompt contract JSON-encodes all dynamic turn fields, uses `NEXT_ROLE_PROMPT_JSON`, and treats `CHILD_TEXT_JSON` as untrusted. Task 7's valid-generator test uses Sprout because the shared `make_scene()` Explorer default is not profile-valid.
+
+---
 
 ### Task 7: Scene Generator with Retry and Fallback
 

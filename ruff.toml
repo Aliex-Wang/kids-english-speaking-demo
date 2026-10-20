@@ -1,0 +1,12 @@
+# Demo lint policy: Ruff default correctness gate (E4, E7, E9, F).
+# Style-only and opt-in categories (I/UP/PLW/B/BLE) are intentionally out of scope.
+
+target-version = "py312"
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+
+# The operational scripts bootstrap `backend` onto sys.path before importing
+# app.*, so their module-level imports necessarily follow a sys.path.insert call.
+[lint.per-file-ignores]
+"scripts/*.py" = ["E402"]

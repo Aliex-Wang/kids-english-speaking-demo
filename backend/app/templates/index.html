@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}English Play{% endblock %}
+{% block content %}
+<header class="hero">
+  <p class="eyebrow">Kids English Speaking</p>
+  <h1>今天想和谁说英语？</h1>
+  <p>选择一个难度和一个卡通小伙伴，系统会为你准备一个生活场景。</p>
+</header>
+
+<section class="panel" aria-labelledby="difficulty-heading">
+  <h2 id="difficulty-heading">选择难度</h2>
+  <div id="difficulty-grid" class="choice-grid">
+    {% for difficulty in app_config.difficulties %}
+    <button
+      class="choice-card difficulty-card"
+      type="button"
+      data-testid="difficulty-{{ difficulty.id }}"
+      data-difficulty="{{ difficulty.id }}"
+    >
+      <strong>{{ difficulty.label }}</strong>
+      <span>{{ difficulty.target_age }}</span>
+      <span>{{ difficulty.target_answer }}</span>
+    </button>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="avatar-heading">
+  <h2 id="avatar-heading">选择小伙伴</h2>
+  <div id="avatar-grid" class="avatar-grid">
+    {% for avatar in app_config.avatars %}
+    <button
+      class="avatar-button"
+      type="button"
+      data-testid="avatar-{{ loop.index0 }}"
+      data-avatar="{{ avatar }}"
+      aria-label="选择头像 {{ avatar }}"
+    >{{ avatar }}</button>
+    {% endfor %}
+  </div>
+</section>
+
+<ul id="theme-name-list" class="sr-only" aria-hidden="true">
+  {% for theme in app_config.themes.values() %}
+  <li>{{ theme.name_zh }} {{ theme.name_en }}</li>
+  {% endfor %}
+</ul>
+
+<button id="start-button" data-testid="start-button" class="primary-button" type="button" disabled>
+  开始练习
+</button>
+<p id="start-status" data-testid="start-status" class="status" aria-live="polite"></p>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="/static/js/index.js"></script>
+{% endblock %}

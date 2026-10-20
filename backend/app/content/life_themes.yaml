@@ -1,0 +1,102 @@
+themes:
+  - id: family
+    name_en: Family Life
+    name_zh: 家庭日常
+    icon: "🏠"
+    color: "#f4a261"
+    subthemes: [breakfast, packing_schoolbag, bedtime]
+    setting: at home
+    role: Mom or Dad
+    goal: talk about a daily family task
+    target_examples:
+      sprout: [milk, bag, bed]
+      explorer: ["I want milk.", "My bag is here.", "I am ready for bed."]
+      star:
+        - "I would like some milk for breakfast, please."
+        - "I put my book in my schoolbag."
+        - "I am ready to go to bed."
+
+  - id: school
+    name_en: School Life
+    name_zh: 学校生活
+    icon: "🏫"
+    color: "#457b9d"
+    subthemes: [classroom, playground, library]
+    setting: at school
+    role: Teacher or classmate
+    goal: complete a simple school task
+    target_examples:
+      sprout: [book, play, quiet]
+      explorer: ["This is my book.", "Let's play together.", "Please be quiet."]
+      star:
+        - "May I borrow your book, please?"
+        - "Would you like to play with me?"
+        - "We should be quiet in the library."
+
+  - id: shopping
+    name_en: Shopping
+    name_zh: 购物
+    icon: "🛒"
+    color: "#2a9d8f"
+    subthemes: [supermarket, bakery, pet_shop]
+    setting: at a shop
+    role: Shop assistant
+    goal: choose an item and complete a simple purchase
+    target_examples:
+      sprout: [apple, bread, please]
+      explorer: ["I want an apple.", "How much is it?", "Here you are."]
+      star:
+        - "I would like to buy an apple, please."
+        - "Could you tell me how much it is?"
+        - "Here is the money. Thank you."
+
+  - id: food
+    name_en: Food
+    name_zh: 饮食
+    icon: "🍎"
+    color: "#e76f51"
+    subthemes: [restaurant, fruit_shop, snack_time]
+    setting: at a restaurant or food shop
+    role: Waiter or shopkeeper
+    goal: order food and say a preference
+    target_examples:
+      sprout: [rice, juice, yummy]
+      explorer: ["I want rice.", "I like juice.", "It is yummy."]
+      star:
+        - "I would like some rice and juice, please."
+        - "I prefer apple juice to orange juice."
+        - "The food is delicious. Thank you."
+
+  - id: transport
+    name_en: Transport
+    name_zh: 出行
+    icon: "🚌"
+    color: "#264653"
+    subthemes: [bus, park, zoo]
+    setting: on the way or outdoors
+    role: Driver, parent, or guide
+    goal: talk about a place and how to get there
+    target_examples:
+      sprout: [bus, park, zoo]
+      explorer: ["Let's take the bus.", "I want to go to the park.", "I like the zoo."]
+      star:
+        - "Shall we take the bus to the park?"
+        - "I would like to see the animals at the zoo."
+        - "How long does it take to get there?"
+
+  - id: friends
+    name_en: Friends and Social
+    name_zh: 朋友与社交
+    icon: "👋"
+    color: "#e9c46a"
+    subthemes: [meet_new_friend, birthday_party, play_together]
+    setting: at a party or playground
+    role: A friendly child
+    goal: greet a friend, share an interest, and invite play
+    target_examples:
+      sprout: [hello, play, blue]
+      explorer: ["Hello, I am happy.", "I like blue.", "Let's play together."]
+      star:
+        - "Hello, it is nice to meet you."
+        - "I like drawing and playing football."
+        - "Would you like to play with me?"

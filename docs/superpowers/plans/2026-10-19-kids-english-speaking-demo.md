@@ -183,6 +183,7 @@ Create `backend/app/config.py`:
 
 ```python
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -195,7 +196,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_env: str = "development"
+    app_env: Literal["development", "test", "production"] = "development"
     hmac_secret: str = "dev-only-change-me"
     scene_ttl_seconds: int = Field(default=7200, ge=60)
     max_audio_bytes: int = Field(default=5_000_000, ge=100_000)
@@ -293,7 +294,6 @@ pydantic-settings>=2.7,<3
 httpx>=0.28,<1
 pyyaml>=6.0,<7
 aliyun-python-sdk-core>=2.16,<3
-aliyun-python-sdk-nls>=2.0,<3
 ```
 
 Create `backend/requirements-dev.txt`:
@@ -302,6 +302,7 @@ Create `backend/requirements-dev.txt`:
 -r requirements.txt
 pytest>=8.3,<9
 pytest-asyncio>=0.25,<1
+httpx2>=2,<3
 playwright>=1.49,<2
 ruff>=0.8,<1
 ```
@@ -900,7 +901,7 @@ git commit -m "feat: add domain schemas and life theme catalog"
 Create `tests/test_signature.py`:
 
 ```python
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -959,7 +960,7 @@ import base64
 import hashlib
 import hmac
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.schemas import SceneEnvelope, SceneSpec
 
@@ -973,7 +974,7 @@ def make_envelope(
     ttl_seconds: int,
     now: datetime | None = None,
 ) -> SceneEnvelope:
-    issued_at = now or datetime.now(timezone.utc)
+    issued_at = now or datetime.now(UTC)
     return SceneEnvelope(
         scene=scene,
         issued_at=issued_at,
@@ -1006,9 +1007,14 @@ def verify_envelope(
     now: datetime | None = None,
 ) -> None:
     expected = sign_envelope(envelope, secret)
-    if not hmac.compare_digest(expected, signature):
+    try:
+        expected_bytes = expected.encode("ascii")
+        signature_bytes = signature.encode("ascii")
+    except UnicodeEncodeError as exc:
+        raise SceneSignatureError("invalid signature") from exc
+    if not hmac.compare_digest(expected_bytes, signature_bytes):
         raise SceneSignatureError("invalid signature")
-    current = now or datetime.now(timezone.utc)
+    current = now or datetime.now(UTC)
     if envelope.expires_at <= current:
         raise SceneSignatureError("scene expired")
 ```
@@ -1118,16 +1124,41 @@ Create `backend/app/safety.py`:
 
 ```python
 import re
+from typing import ClassVar
 
 
 class SafetyValidator:
-    BANNED_PATTERNS = [
-        r"\b(kill|gun|blood|horror|naked|sex|adult)\b",
-        r"\b(girlfriend|boyfriend|dating)\b",
-        r"\b(buy now|discount|subscribe|brand)\b",
-        r"\b(your (real )?name|your school|your address|your phone|send (me )?a photo)\b",
-        r"\b(what is your address|where do you live)\b",
-    ]
+    VIOLENCE_HORROR_PATTERNS: ClassVar[tuple[str, ...]] = (
+        r"\b(kill|killing|killed|murder|fight|fighting|attack|attacking|gun|guns|knife|knives|weapon|weapons|blood|bloody|horror|nightmare|nightmares)\b",
+    )
+    ADULT_PATTERNS: ClassVar[tuple[str, ...]] = (
+        r"\b(beer|wine|alcohol|drunk|smoke|smoking|cigarette|cigarettes|naked|sex|sexual|adult|adults)\b",
+    )
+    DISCRIMINATION_PATTERNS: ClassVar[tuple[str, ...]] = (
+        r"\b(racist|racism|sexist|sexism|discrimination|discriminate)\b",
+        r"\b(inferior|superior race)\b",
+        r"\b(boys|girls)\s+(are|is)\s+(better|worse)\b",
+        r"\b(boys|girls)\s+(cannot|can't|cant)\b",
+        r"\bhate\s+(boys|girls|people|women|men|children)\b",
+    )
+    BRAND_PROMOTION_PATTERNS: ClassVar[tuple[str, ...]] = (
+        r"\b(buy now|discount|subscribe|sponsored|brand|best brand)\b",
+        r"\b(coca[- ]?cola|pepsi|mcdonald(?:'s|s)?|nike|adidas|disney)\b",
+    )
+    PERSONAL_INFORMATION_PATTERNS: ClassVar[tuple[str, ...]] = (
+        r"\b(your (full|real) name|your name|your school|your (home )?address|your phone( number)?|your email( address)?|your birthday)\b",
+        r"\b(what(?:'s| is) your (full |real |home )?(name|address|phone( number)?|email( address)?|birthday))\b",
+        r"\b(send (me )?a (photo|picture))\b",
+        r"\b(where do you live)\b",
+        r"\b((what|which) school do you (go to|attend)|what(?:'s| is) your school('s name)?)\b",
+    )
+    BANNED_PATTERNS: ClassVar[tuple[str, ...]] = (
+        *VIOLENCE_HORROR_PATTERNS,
+        *ADULT_PATTERNS,
+        *DISCRIMINATION_PATTERNS,
+        *BRAND_PROMOTION_PATTERNS,
+        *PERSONAL_INFORMATION_PATTERNS,
+    )
 
     def violations(self, text: str) -> list[str]:
         normalized = text.lower()
@@ -1215,6 +1246,7 @@ class SceneValidator:
                 step.hint_zh,
                 step.retry_prompt,
                 *step.target_phrases,
+                *step.accepted_keywords,
             ]:
                 if self.safety.violations(value):
                     issues.append(f"{step.step_id} contains unsafe content")
@@ -1468,10 +1500,10 @@ templates:
         goal: greet the child
         role_prompt: Good morning, are you ready for breakfast?
         targets:
-          sprout: [yes]
+          sprout: ["yes"]
           explorer: ["Yes, I am ready."]
           star: ["Yes, I am ready for breakfast."]
-        keywords: [yes, ready]
+        keywords: ["yes", "ready"]
         hints:
           sprout: "Say: yes"
           explorer: "Say: Yes, I am ready."
@@ -1790,10 +1822,10 @@ Append this fragment to the same `fallback_scenes.yaml` file:
         goal: greet the parent
         role_prompt: Are you ready to go to the park?
         targets:
-          sprout: [yes]
+          sprout: ["yes"]
           explorer: ["Yes, I am ready."]
           star: ["Yes, I am ready to go to the park."]
-        keywords: [yes, ready]
+        keywords: ["yes", "ready"]
         hints:
           sprout: "Say: yes"
           explorer: "Say: Yes, I am ready."
@@ -1907,7 +1939,7 @@ Append this final fragment to the same `fallback_scenes.yaml` file:
         goal: invite the friend to play
         role_prompt: Would you like to play with me?
         targets:
-          sprout: [yes]
+          sprout: ["yes"]
           explorer: ["Yes, let's play!"]
           star: ["Yes, I would love to play with you."]
         keywords: [yes, play]
@@ -2328,6 +2360,8 @@ git add backend/app/providers/__init__.py backend/app/providers/base.py backend/
 git commit -m "feat: add provider interfaces and deterministic fakes"
 ```
 
+> Post-review hardening: the delivered Task 6 prompt contract JSON-encodes all dynamic turn fields, uses `NEXT_ROLE_PROMPT_JSON`, and treats `CHILD_TEXT_JSON` as untrusted. Task 7's valid-generator test uses Sprout because the shared `make_scene()` Explorer default is not profile-valid.
+
 ---
 
 ### Task 7: Scene Generator with Retry and Fallback
@@ -2378,7 +2412,7 @@ async def test_generator_returns_llm_scene_when_valid():
         ).model_dump(mode="json")
     )
     generated = await build_generator(llm).generate(
-        Difficulty.explorer, [ThemeId.family, ThemeId.school]
+        Difficulty.sprout, [ThemeId.family, ThemeId.school]
     )
     assert generated.fallback_used is False
     assert generated.scene.theme not in {ThemeId.family, ThemeId.school}
@@ -2414,8 +2448,8 @@ async def test_generator_prompt_contains_difficulty_and_theme():
             return make_scene().model_dump(mode="json")
 
     llm = CapturingLLM()
-    generated = await build_generator(llm).generate(Difficulty.explorer, [])
-    assert "DIFFICULTY: explorer" in captured["prompt"]
+    generated = await build_generator(llm).generate(Difficulty.sprout, [])
+    assert "DIFFICULTY: sprout" in captured["prompt"]
     assert f"THEME: {generated.scene.theme.value}" in captured["prompt"]
 ```
 
@@ -2515,6 +2549,8 @@ Expected: PASS.
 git add backend/app/scene_generator.py tests/test_scene_generator.py
 git commit -m "feat: generate scenes with retry and fallback"
 ```
+
+> Post-review hardening: GeneratedScene includes ttempts and rror_type; fallback scenes are revalidated; Task 12 logs rror_type. Task 7 tests cover backend overrides and exactly two attempts.
 
 ---
 
@@ -3047,6 +3083,8 @@ Expected: PASS.
 git add backend/app/matching.py backend/app/dialogue.py tests/test_matching.py tests/test_dialogue.py
 git commit -m "feat: orchestrate dialogue turns and state transitions"
 ```
+
+> Post-review hardening: TurnResponse includes optional rror_type; LLM/TTS exception class names are exposed for API logging; max_attempts always advances regardless of llow_skip; empty-ASR and safety-redirect replies are TTS-backed; unsafe redirects earn 0 stars; matching uses enum equality. Task 12 logs turn rror_type.
 
 ---
 
@@ -3603,12 +3641,16 @@ import time
 
 import httpx
 from aliyunsdkcore.client import AcsClient
-from aliyunsdknls.request.v20190228.CreateTokenRequest import (
-    CreateTokenRequest,
-)
+from aliyunsdkcore.request import RpcRequest
 
 from app.config import Settings
 from app.providers.base import ASRResult, ProviderError, TTSResult
+
+
+class CreateTokenRequest(RpcRequest):
+    def __init__(self):
+        super().__init__("nls-meta", "2019-02-28", "CreateToken")
+        self.set_method("POST")
 
 
 class AliyunTokenCache:

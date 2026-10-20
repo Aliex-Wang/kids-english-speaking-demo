@@ -28,7 +28,7 @@ The slow suite runs all six themes × three difficulties in Playwright.
 
 ## Real Aliyun and Qwen configuration
 
-Copy `.env.example` to `.env`, replace the placeholders, and keep the real file out of Git. The application refuses to start in production with the default HMAC secret or missing provider credentials.
+Copy `.env.example` to `.env`, replace the placeholders, and keep the real file out of Git. Generate a random signing secret with `python -c "import secrets; print(secrets.token_hex(32))"` and set it as `HMAC_SECRET`. The application refuses to start in production with the default HMAC secret or missing provider credentials.
 
 - `ALIYUN_NLS_APP_KEY`: Aliyun Intelligent Speech Interaction project appkey.
 - `ALIYUN_ACCESS_KEY_ID` and `ALIYUN_ACCESS_KEY_SECRET`: used to create the short-lived NLS token.
@@ -50,5 +50,5 @@ Place the HTTPS certificate at `deploy/certs/fullchain.pem` and the private key 
 - Raw recordings are converted only for the current ASR request and are not persisted.
 - Child speech transcripts are not stored in `localStorage` or in event logs.
 - `localStorage` stores the signed scene, current step, stars, completed step IDs, target-expression completion, recent themes, and setup choices.
-- Event logs contain allowlisted metadata only: theme, difficulty, success, turns, stars, latency, and error type.
+- Event logs contain allowlisted metadata only: request_id, theme, difficulty, success, turns, stars, latency, error type, and the `continued_after_help` event.
 - API keys never appear in browser code.

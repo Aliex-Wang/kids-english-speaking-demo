@@ -1,4 +1,4 @@
-import {createScene, logEvent, submitTurn} from './api.js';
+import {createScene, InvalidSceneError, logEvent, submitTurn} from './api.js';
 import {MicRecorder} from './recorder.js';
 import {
   buildPracticeState,
@@ -203,6 +203,10 @@ async function sendTurn({audio, textInput}) {
   } catch (error) {
     let message = '没有听清，请再试一次。';
     let errorType = 'turn';
+    if (error?.name === 'InvalidSceneError') {
+      await recoverFromInvalidScene();
+      return;
+    }
     if (error?.name === 'TimeoutError') {
       message = '等得有点久，请再试一次。';
       errorType = 'timeout';
@@ -331,6 +335,31 @@ function showHelp() {
     difficulty: state.difficulty,
     theme: scene.theme,
   });
+}
+
+async function recoverFromInvalidScene() {
+  setStatus('练习已过期，正在准备新的场景...');
+  elements.micButton.disabled = true;
+  elements.textInput.disabled = true;
+  elements.textSubmit.disabled = true;
+  try {
+    const response = await createScene(
+      state.difficulty,
+      loadRecentThemes(),
+    );
+    const nextScene = response.envelope.scene;
+    recordRecentTheme(nextScene.theme);
+    clearPractice();
+    savePractice(buildPracticeState({
+      difficulty: state.difficulty,
+      avatar: state.avatar,
+      response,
+    }));
+    window.location.reload();
+  } catch {
+    clearPractice();
+    window.location.replace('/');
+  }
 }
 
 async function restartPractice() {

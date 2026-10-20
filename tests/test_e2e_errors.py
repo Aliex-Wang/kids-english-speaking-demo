@@ -81,3 +81,40 @@ def test_help_then_answer_logs_continued_after_help(
         event.get("name") == "continued_after_help"
         for event in events
     )
+
+def open_text_fallback(page):
+    page.evaluate(
+        "document.getElementById('text-fallback').classList.remove('hidden')"
+    )
+
+
+def test_invalid_scene_signature_regenerates_and_recovers(
+    live_server,
+    browser_page,
+):
+    page = browser_page
+    start_practice(page, live_server)
+    page.evaluate(
+        """() => {
+          const key = 'kidsEnglishPracticeV1';
+          const data = JSON.parse(localStorage.getItem(key));
+          data.signature = 'tampered';
+          localStorage.setItem(key, JSON.stringify(data));
+        }"""
+    )
+    page.reload()
+    page.wait_for_url("**/practice")
+    page.wait_for_selector("#dialogue:not(.hidden)")
+    open_text_fallback(page)
+    page.get_by_test_id("text-input").fill("yes")
+    page.get_by_test_id("text-submit").click()
+    page.wait_for_selector("#task-intro:not(.hidden)", timeout=15000)
+    assert page.locator("#dialogue").evaluate(
+        "el => el.classList.contains('hidden')"
+    )
+    signature = page.evaluate(
+        "JSON.parse(localStorage.getItem('kidsEnglishPracticeV1')).signature"
+    )
+    assert signature != "tampered"
+    assert len(signature) > 0
+

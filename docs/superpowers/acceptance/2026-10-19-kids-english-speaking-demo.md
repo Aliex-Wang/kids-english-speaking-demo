@@ -25,7 +25,7 @@ $env:PATH = 'D:\Program Files\EVCapture;' + $env:PATH
 Result:
 
 ```text
-173 passed, 18 deselected in 48.14s
+175 passed, 18 deselected in 50.11s
 ```
 
 ## Slow Playwright matrix
@@ -40,10 +40,26 @@ $env:PATH = 'D:\Program Files\EVCapture;' + $env:PATH
 Result:
 
 ```text
-18 passed, 173 deselected in 48.22s
+18 passed, 175 deselected in 56.16s
 ```
 
 All 18 theme/difficulty browser combinations pass.
+
+## Final-review fixes
+
+The two Important findings from the final review were fixed and re-verified in
+this round:
+
+- Empty/low-confidence ASR now counts as an attempt and auto-advances to the
+  next step at `max_attempts` (stars stay 0), reusing the same terminal path as
+  rejected turns. Covered by updated `tests/test_dialogue.py`.
+- Invalid/expired scene signatures now surface as a typed `InvalidSceneError`
+  from `api.js`; `practice.js` regenerates a fresh scene with the saved
+  difficulty and recent themes (or redirects to `/` if regeneration fails).
+  Covered by a new Playwright test in `tests/test_e2e_errors.py`.
+
+The explicitly non-blocking minors from the final review were intentionally left
+unchanged.
 
 ## Ruff and lint policy
 

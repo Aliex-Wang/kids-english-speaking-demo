@@ -60,13 +60,7 @@ class DialogueOrchestrator:
         text = context.recognized_text.strip()
 
         if not text:
-            return await self._retry(
-                step,
-                context,
-                message="I didn't hear you. Let's try again.",
-                stars=0,
-                attempts=context.attempts,
-            )
+            return await self._empty_asr(step, context)
         if self.safety.violations(text):
             return await self._safe_redirect(step, context)
 
@@ -171,33 +165,12 @@ class DialogueOrchestrator:
     ) -> TurnResponse:
         attempts = context.attempts + 1
         if attempts >= step.max_attempts:
-            if next_step is None:
-                reply = "Great job! See you next time."
-                next_step_id = None
-                completed = True
-                feedback = "Nice try! Let's finish here."
-            else:
-                reply = next_step.role_prompt
-                next_step_id = next_step.step_id
-                completed = False
-                feedback = "Nice try! Let's keep going."
-            audio_base64, media_type, tts_error = await self._tts(
-                reply, context.scene.difficulty
-            )
-            return TurnResponse(
-                recognized_text=context.recognized_text,
-                accepted=False,
-                feedback=feedback,
-                reply=reply,
-                hint="",
-                next_step=next_step_id,
-                stars_earned=1,
-                safety="ok",
-                attempts=0,
-                completed=completed,
-                audio_base64=audio_base64,
-                media_type=media_type,
-                error_type=tts_error or judgement_error,
+            return await self._auto_advance(
+                context,
+                step,
+                next_step,
+                stars=1,
+                error_type=judgement_error,
             )
 
         reply = step.retry_prompt
@@ -245,6 +218,65 @@ class DialogueOrchestrator:
             audio_base64=audio_base64,
             media_type=media_type,
             error_type=tts_error,
+        )
+
+    async def _empty_asr(
+        self,
+        step: SceneStep,
+        context: TurnContext,
+    ) -> TurnResponse:
+        attempts = context.attempts + 1
+        if attempts >= step.max_attempts:
+            next_step = self._next_step(context.scene, step)
+            return await self._auto_advance(
+                context,
+                step,
+                next_step,
+                stars=0,
+            )
+        return await self._retry(
+            step,
+            context,
+            message="I didn't hear you. Let's try again.",
+            stars=0,
+            attempts=attempts,
+        )
+
+    async def _auto_advance(
+        self,
+        context: TurnContext,
+        step: SceneStep,
+        next_step: SceneStep | None,
+        stars: int,
+        error_type: str | None = None,
+    ) -> TurnResponse:
+        if next_step is None:
+            reply = "Great job! See you next time."
+            next_step_id = None
+            completed = True
+            feedback = "Nice try! Let's finish here."
+        else:
+            reply = next_step.role_prompt
+            next_step_id = next_step.step_id
+            completed = False
+            feedback = "Nice try! Let's keep going."
+        audio_base64, media_type, tts_error = await self._tts(
+            reply, context.scene.difficulty
+        )
+        return TurnResponse(
+            recognized_text=context.recognized_text,
+            accepted=False,
+            feedback=feedback,
+            reply=reply,
+            hint="",
+            next_step=next_step_id,
+            stars_earned=stars,
+            safety="ok",
+            attempts=0,
+            completed=completed,
+            audio_base64=audio_base64,
+            media_type=media_type,
+            error_type=tts_error or error_type,
         )
 
     async def _safe_redirect(

@@ -1,3 +1,10 @@
+export class InvalidSceneError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'InvalidSceneError';
+  }
+}
+
 export async function createScene(difficulty, recentThemes) {
   const response = await fetch('/api/scene', {
     method: 'POST',
@@ -49,6 +56,11 @@ export async function submitTurn({
     });
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
+      if (response.status === 400 && payload.detail?.code === 'invalid_scene') {
+        throw new InvalidSceneError(
+          payload.detail?.message || 'practice scene is invalid',
+        );
+      }
       const message = payload.detail?.message
         || `turn request failed: ${response.status}`;
       throw new Error(message);

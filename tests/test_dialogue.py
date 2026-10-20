@@ -64,7 +64,24 @@ async def test_empty_asr_does_not_advance_or_award_stars():
     assert result.accepted is False
     assert result.next_step == "step_1"
     assert result.stars_earned == 0
+    assert result.attempts == 1
+
+
+async def test_empty_asr_auto_advances_after_max_attempts():
+    scene = make_scene()
+    result = await make_orchestrator().handle_turn(
+        TurnContext(
+            scene=scene,
+            current_step_id="step_1",
+            recognized_text="",
+            attempts=1,
+        )
+    )
+    assert result.accepted is False
+    assert result.next_step == "step_2"
     assert result.attempts == 0
+    assert result.stars_earned == 0
+    assert result.completed is False
 
 
 async def test_empty_asr_returns_tts_backed_retry():
